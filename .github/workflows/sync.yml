@@ -2,7 +2,7 @@ name: Sync Fork with Upstream
 
 on:
   schedule:
-    - cron: '0 7 * * *'   # 每天 UTC 0 点运行（可按需修改）
+    - cron: '0 7 * * *'   # 每天 UTC 7 点运行（对应北京时间 15 点）
   workflow_dispatch:      # 允许手动触发
 
 jobs:
@@ -12,15 +12,23 @@ jobs:
       - name: Checkout fork repo
         uses: actions/checkout@v4
         with:
-          token: ${{ secrets.keke567_microfront }}  # 如果需要推送，需使用 PAT
+          token: ${{ secrets.keke567_microfront }}  # 关联你的 PAT 密钥
+          fetch-depth: 0  # 拉取完整提交历史，避免同步不全
 
       - name: Sync with upstream
         uses: aormsby/Fork-Sync-With-Upstream-action@v3.4.1
         with:
-          upstream_repository: <MyslZhao/microfront>   # 例如：octocat/Hello-World
-          target_branch: main                           # 你要同步的目标分支
-          upstream_branch: main                          # 上游要同步的分支（可选，默认同目标分支）
-          git_config_user: <keke567>                   # 用于提交的用户名
-          git_config_email: <552346996@qq.com>                    # 用于提交的邮箱
-          sync_merge: true                               # 是否执行合并（设为 true 才会实际推送）
-          merge_type: 'merge'                             # 合并方式：merge/rebase/fast-forward
+          # 核心参数修正（适配 v3.4.1 版本）
+          target_sync_branch: main                  # 你的 Fork 仓库目标分支
+          target_repo_token: ${{ secrets.keke567_microfront }}  # 推送用的 PAT 密钥
+          upstream_sync_branch: main                # 上游仓库要同步的分支
+          upstream_git_url: https://github.com/MyslZhao/microfront.git  # 上游仓库完整地址
+          
+          # 提交信息配置（去掉占位符）
+          git_config_user: keke567                  # 你的 GitHub 用户名
+          git_config_email: 552346996@qq.com        # 你的邮箱
+          
+          # 合并配置（修正参数名）
+          sync_method: merge                        # 合并方式（替代原来的 merge_type）
+          abort_on_conflict: false                  # 有冲突时不直接失败
+          create_pr: false                          # 不自动创建 PR，直接合并
