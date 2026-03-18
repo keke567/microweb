@@ -1,0 +1,26 @@
+name: Sync Fork with Upstream
+
+on:
+  schedule:
+    - cron: '0 7 * * *'   # 每天 UTC 0 点运行（可按需修改）
+  workflow_dispatch:      # 允许手动触发
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout fork repo
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.keke567_microfront }}  # 如果需要推送，需使用 PAT
+
+      - name: Sync with upstream
+        uses: aormsby/Fork-Sync-With-Upstream-action@v3.4.1
+        with:
+          upstream_repository: <MyslZhao/microfront>   # 例如：octocat/Hello-World
+          target_branch: main                           # 你要同步的目标分支
+          upstream_branch: main                          # 上游要同步的分支（可选，默认同目标分支）
+          git_config_user: <keke567>                   # 用于提交的用户名
+          git_config_email: <552346996@qq.com>                    # 用于提交的邮箱
+          sync_merge: true                               # 是否执行合并（设为 true 才会实际推送）
+          merge_type: 'merge'                             # 合并方式：merge/rebase/fast-forward
