@@ -1,4 +1,4 @@
-name: Sync Fork with Upstream (Read Only)
+name: Sync Fork with Upstream 
 
 on:
   schedule:
