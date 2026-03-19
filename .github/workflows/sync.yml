@@ -2,8 +2,8 @@ name: Sync Fork with Upstream
 
 on:
   schedule:
-    - cron: '0 7 * * *'
-  workflow_dispatch:
+    - cron: '0 7 * * *'   # 每天 UTC 7 点（北京时间 15 点）运行
+  workflow_dispatch:      # 允许手动触发
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
@@ -16,11 +16,13 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          ref: master
+          ref: master  # 你的仓库主分支是 master
 
       - name: Sync with upstream
         run: |
-          git remote add upstream https://github.com/MyslZhao/microfront.git
+          # 添加上游仓库（如果已存在则忽略错误）
+          git remote add upstream https://github.com/MyslZhao/microweb.git || true
+          # 拉取上游最新代码
           git fetch upstream
-          git merge upstream/master --no-edit
-          create_pr: false                          # 不自动创建 PR，直接合并
+          # 优先尝试合并，若失败则强制重置为上游 master（兼容无共同历史场景）
+          git merge upstream/master --no-edit || git reset --hard upstream/master
