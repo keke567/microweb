@@ -2,10 +2,9 @@ name: Sync Fork with Upstream
 
 on:
   schedule:
-    - cron: '0 7 * * *'   # 每天 UTC 7 点（北京时间 15 点）运行
-  workflow_dispatch:      # 允许手动触发
+    - cron: '0 7 * * *'
+  workflow_dispatch:
 
-# 适配 Node.js 24，消除版本警告
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
@@ -13,28 +12,15 @@ jobs:
   sync:
     runs-on: ubuntu-latest
     steps:
-      # 1. 检出自己的 Fork 仓库（仅读，无需 token）
-      - name: Checkout fork repo (read only)
+      - name: Checkout fork repo
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # 拉取完整历史，保证同步完整
+          fetch-depth: 0
+          ref: master
 
-      # 2. 添加上游仓库远程地址
-      - name: Add upstream repository
+      - name: Sync with upstream
         run: |
           git remote add upstream https://github.com/MyslZhao/microfront.git
-          git fetch upstream  # 拉取上游仓库所有分支代码
-
-      # 3. 合并上游代码到本地分支（仅本地，不推送）
-      - name: Merge upstream into local branch
-        run: |
-          git checkout main  # 切换到自己的 main 分支
-          git merge upstream/main --no-edit  # 合并上游 main 分支，自动确认
-
-      # 4. （可选）如果需要自动推送到自己的 Fork 仓库（仅需自己仓库的读权限，无需 Secrets）
-      # 注意：如果这一步报错，直接删除即可，前 3 步已完成「同步拉取」
-      - name: Push to own fork (optional)
-        run: git push origin main
-        continue-on-error: true  # 推送失败也不终止 workflow
-          abort_on_conflict: false                  # 有冲突时不直接失败
+          git fetch upstream
+          git merge upstream/master --no-edit
           create_pr: false                          # 不自动创建 PR，直接合并
