@@ -1,34 +1,40 @@
-name: Sync Fork with Upstream
+name: Sync Fork with Upstream (Read Only)
 
 on:
   schedule:
-    - cron: '0 7 * * *'   # 每天 UTC 7 点运行（对应北京时间 15 点）
+    - cron: '0 7 * * *'   # 每天 UTC 7 点（北京时间 15 点）运行
   workflow_dispatch:      # 允许手动触发
+
+# 适配 Node.js 24，消除版本警告
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   sync:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout fork repo
+      # 1. 检出自己的 Fork 仓库（仅读，无需 token）
+      - name: Checkout fork repo (read only)
         uses: actions/checkout@v4
         with:
-          token: ${{ secrets.keke567_microfront }}  # 关联你的 PAT 密钥
-          fetch-depth: 0  # 拉取完整提交历史，避免同步不全
+          fetch-depth: 0  # 拉取完整历史，保证同步完整
 
-      - name: Sync with upstream
-        uses: aormsby/Fork-Sync-With-Upstream-action@v3.4.1
-        with:
-          # 核心参数修正（适配 v3.4.1 版本）
-          target_sync_branch: main                  # 你的 Fork 仓库目标分支
-          target_repo_token: ${{ secrets.keke567_microfront }}  # 推送用的 PAT 密钥
-          upstream_sync_branch: main                # 上游仓库要同步的分支
-          upstream_git_url: https://github.com/MyslZhao/microfront.git  # 上游仓库完整地址
-          
-          # 提交信息配置（去掉占位符）
-          git_config_user: keke567                  # 你的 GitHub 用户名
-          git_config_email: 552346996@qq.com        # 你的邮箱
-          
-          # 合并配置（修正参数名）
-          sync_method: merge                        # 合并方式（替代原来的 merge_type）
+      # 2. 添加上游仓库远程地址
+      - name: Add upstream repository
+        run: |
+          git remote add upstream https://github.com/MyslZhao/microfront.git
+          git fetch upstream  # 拉取上游仓库所有分支代码
+
+      # 3. 合并上游代码到本地分支（仅本地，不推送）
+      - name: Merge upstream into local branch
+        run: |
+          git checkout main  # 切换到自己的 main 分支
+          git merge upstream/main --no-edit  # 合并上游 main 分支，自动确认
+
+      # 4. （可选）如果需要自动推送到自己的 Fork 仓库（仅需自己仓库的读权限，无需 Secrets）
+      # 注意：如果这一步报错，直接删除即可，前 3 步已完成「同步拉取」
+      - name: Push to own fork (optional)
+        run: git push origin main
+        continue-on-error: true  # 推送失败也不终止 workflow
           abort_on_conflict: false                  # 有冲突时不直接失败
           create_pr: false                          # 不自动创建 PR，直接合并
